@@ -76,10 +76,15 @@ function AuthProvider({ children }: { children: ReactNode }) {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.log('[v0] Error fetching profile:', error);
+      router.push('/auth/login');
+    } else if (!data) {
+      // Profile doesn't exist, sign out and redirect
+      await supabase.auth.signOut();
+      router.push('/auth/login');
     } else {
       setProfile(data);
     }
@@ -103,15 +108,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const { profile, isLoading } = useAuth();
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <Spinner className="w-8 h-8" />
-      </div>
-    );
-  }
-
-  if (!profile) {
+  if (isLoading || !profile) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <Spinner className="w-8 h-8" />
